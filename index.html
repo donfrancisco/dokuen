@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="Dokuen : A personal PaaS for mac and linux" />
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>Dokuen</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/donfrancisco/dokuen">View on GitHub</a>
+
+          <h1 id="project_title">Dokuen</h1>
+          <h2 id="project_tagline">A personal PaaS for mac and linux</h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/donfrancisco/dokuen/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/donfrancisco/dokuen/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <h1>Dokuen, a Personal App Platform</h1>
+
+<p>Dokuen is a "personal app platform". It's the same idea as all of these PaaS and IaaS services out there, except you host it on
+your own machine. Currently, Dokuen supports Mac and Ubuntu. <a href="http://bugsplat.info/2012-05-17-dokuen-a-personal-app-platform.html">Here</a> is an article that explains my motivations.</p>
+
+<h2>Requirements</h2>
+
+<ul>
+<li><a href="https://github.com/sitaramc/gitolite">Gitolite</a></li>
+<li><a href="http://wiki.nginx.org/Main">Nginx</a></li>
+</ul><h2>Installation</h2>
+
+<h3>Step 1</h3>
+
+<p>WARNING: At the moment Dokuen needs a custom version of Mason. A patch has been accepted but as
+of now (2012-05-19) there hasn't been a release with this patch. So, install mason:</p>
+
+<pre><code>$ git clone https://github.com/peterkeen/mason
+$ cd mason
+$ gem build mason.gemspec
+$ gem install mason-0.0.11.gem
+</code></pre>
+
+<p>Then, install dokuen:</p>
+
+<pre><code>gem install dokuen
+</code></pre>
+
+<h3>Step 2</h3>
+
+<p>Install nginx using homebrew or your distro's package manager:</p>
+
+<pre><code>$ brew install nginx
+</code></pre>
+
+<h3>Step 3</h3>
+
+<p>Create a <code>git</code> user and install gitolite according to <a href="http://sitaramc.github.com/gitolite/qi.html">package directions</a>. You'll be making changes to the config later, but for now you should be able to create a new repository and push to it.</p>
+
+<h3>Step 4</h3>
+
+<p>Run this:</p>
+
+<pre><code>$ sudo mkdir -p /usr/local/var/dokuen
+$ cd /usr/local/var/dokuen
+$ sudo dokuen setup .
+</code></pre>
+
+<p>This will ask you a few questions, set up a few directories, and install a few useful commands. It'll also show you some things you need to do.</p>
+
+<h2>Creating an App</h2>
+
+<pre><code>$ ssh git@&lt;your_host&gt; dokuen create --application=&lt;name&gt;
+git@&lt;your_host&gt;:&lt;name&gt;.git
+
+$ git remote add dokuen git@&lt;your_host&gt;:&lt;name&gt;.git
+</code></pre>
+
+<h3>Add some environment variables</h3>
+
+<pre><code>$ ssh git@&lt;your_host&gt; dokuen config_set -V BUILDPACK_URL="https://github.com/heroku/heroku-buildpack-ruby.git" DOKUEN_SCALE="web=1" --application=&lt;name&gt;
+</code></pre>
+
+<h3>Deploy</h3>
+
+<pre><code>$ git push dokuen master
+&lt;deploy transcript&gt;
+</code></pre>
+
+<h3>Check it out!</h3>
+
+<pre><code>$ open http://&lt;your_host&gt;:12345/
+</code></pre>
+
+<h2>Available "app" Sub-commands</h2>
+
+<ul>
+<li><code>create</code></li>
+<li><code>config_set &lt;key&gt;=&lt;value&gt; ...</code></li>
+<li><code>config_delete &lt;key&gt; ...</code></li>
+<li><code>scale &lt;type&gt;=&lt;num&gt;...</code></li>
+<li><code>buildpacks</code></li>
+<li><code>install_buildpack &lt;url&gt;</code></li>
+<li><code>remove_buildpack &lt;name&gt;</code></li>
+<li><code>run_command &lt;command&gt;</code></li>
+<li><code>shutdown</code></li>
+<li><code>restart</code></li>
+</ul><h2>DNS Setup</h2>
+
+<p>I have my home router set up to forward ports 80 and 443 to my mac mini, and I have a dynamic DNS system set up with a wildcard CNAME Unfortunately this setup is hard to automate so Dokuen doesn't manage any of it for you.</p>
+
+<p>What it does do is set up Nginx server configs for you that you can choose to use. If you want to use them, put this at the bottom of the <code>http</code> section of <code>nginx.conf</code>:</p>
+
+<pre><code>include /usr/local/var/dokuen/nginx/*.conf;
+</code></pre>
+
+<p>Then, force a restart of your app:</p>
+
+<pre><code>$ ssh git@&lt;your_host&gt; dokuen scale web=0 --application=&lt;name&gt;
+$ ssh git@&lt;your_host&gt; dokuen scale web=1 --application=&lt;name&gt;
+</code></pre>
+
+<h2>Rails</h2>
+
+<p>Unfortunately the stock Heroku buildpacks install a vendored node.js compiled for the Heroku platform, which happens to be linux. This doesn't work for Mac, which means you have to use a slightly patched version. This one works with a homebrew-installed node.js: <a href="https://github.com/peterkeen/heroku-buildpack-ruby">https://github.com/peterkeen/heroku-buildpack-ruby</a></p>
+
+<h2>License</h2>
+
+<p>MIT</p>
+
+<h2>Contact and Development</h2>
+
+<p>Fork and send me a pull request. If you'd like to talk about Dokuen there's <code>#dokuen</code> on <code>irc.freenode.net</code>, as well as a <a href="https://groups.google.com/forum/#!forum/dokuen">mailing list</a>. </p>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">Dokuen maintained by <a href="https://github.com/donfrancisco">donfrancisco</a></p>
+        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+    
+
+  </body>
+</html>
